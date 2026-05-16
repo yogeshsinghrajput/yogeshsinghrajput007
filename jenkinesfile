@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk8'
+    }
+
+    stages {
+
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/opstree/spring3hibernate.git'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('GitLeaks Scan') {
+            steps {
+                sh '''
+                    gitleaks detect \
+                    --source . \
+                    --report-format json \
+                    --report-path gitleaks-report.json || true
+                '''
+            }
+        }
+
+        stage('Archive Report') {
+            steps {
+                archiveArtifacts artifacts: 'gitleaks-report.json'
+            }
+        }
+    }
+}
